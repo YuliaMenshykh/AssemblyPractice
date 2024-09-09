@@ -1,0 +1,104 @@
+     1                                  section .data
+     2                                  
+     3 00000000 0503080602                  unsortedArray db 5, 3, 8, 6, 2
+     4                                      arraySize equ 5
+     5                                  
+     6 00000005 556E736F7274656420-         fmt db 'Unsorted array: %s', 0xA, 0xD
+     6 0000000E 61727261793A202573-
+     6 00000017 0A0D               
+     7 00000019 536F72746564206172-         fmtSorted db 'Sorted array: %s', 0xA, 0xD
+     7 00000022 7261793A2025730A0D 
+     8 0000002B 25642000                    fmtElement db '%d ', 0
+     9                                  
+    10                                  section .bss
+    11 00000000 <res F0h>                   buffer times arraySize resb '0'
+    12 000000F0 ??                          temp resb 1
+    13                                  
+    14                                  section .text
+    15                                      extern printf, sprintf, strlen, strcat
+    16                                      global main
+    17                                  
+    18                                  main:
+    19                                  
+    20 00000000 48BF-                       mov rdi, fmt
+    20 00000002 [0500000000000000] 
+    21 0000000A 48BE-                       mov rsi, buffer
+    21 0000000C [0000000000000000] 
+    22 00000014 48BA-                       mov rdx, unsortedArray
+    22 00000016 [0000000000000000] 
+    23 0000001E E86C000000                  call arrayToString
+    24 00000023 4889C6                      mov rsi, rax
+    25 00000026 E8(00000000)                call printf
+    26                                  
+    27 0000002B 48BF-                       mov rdi, unsortedArray
+    27 0000002D [0000000000000000] 
+    28 00000035 48BE-                       mov rsi, buffer
+    28 00000037 [0000000000000000] 
+    29 0000003F B905000000                  mov rcx, arraySize
+    30 00000044 F3A4                        rep movsb
+    31                                  
+    32 00000046 48BF-                       mov rdi, buffer
+    32 00000048 [0000000000000000] 
+    33 00000050 BE05000000                  mov rsi, arraySize
+    34 00000055 E880000000                  call bubbleSort
+    35                                  
+    36 0000005A 48BF-                       mov rdi, fmtSorted
+    36 0000005C [1900000000000000] 
+    37 00000064 48BE-                       mov rsi, buffer
+    37 00000066 [0000000000000000] 
+    38 0000006E 48BA-                       mov rdx, buffer
+    38 00000070 [0000000000000000] 
+    39 00000078 E812000000                  call arrayToString
+    40 0000007D 4889C6                      mov rsi, rax
+    41 00000080 E8(00000000)                call printf
+    42                                  
+    43 00000085 B83C000000                  mov rax, 60
+    44 0000008A 4831FF                      xor rdi, rdi
+    45 0000008D 0F05                        syscall
+    46                                  
+    47                                  arrayToString:
+    48 0000008F 48BB-                       mov rbx, buffer
+    48 00000091 [0000000000000000] 
+    49 00000099 C60300                      mov byte [rbx], 0
+    50 0000009C 4889F1                      mov rcx, rsi
+    51 0000009F 4889D7                      mov rdi, rdx
+    52                                  .nextElement:
+    53 000000A2 8A07                        mov al, [rdi]
+    54 000000A4 480FB6F0                    movzx rsi, al
+    55 000000A8 48BF-                       mov rdi, fmtElement
+    55 000000AA [2B00000000000000] 
+    56 000000B2 E8(00000000)                call sprintf
+    57 000000B7 4889C3                      mov rbx, rax
+    58 000000BA E8(00000000)                call strlen
+    59 000000BF 4889C2                      mov rdx, rax
+    60 000000C2 E8(00000000)                call strcat
+    61 000000C7 48FFC7                      inc rdi
+    62 000000CA 48FFC9                      dec rcx
+    63 000000CD 75D3                        jnz .nextElement
+    64 000000CF 48B8-                       mov rax, buffer
+    64 000000D1 [0000000000000000] 
+    65 000000D9 C3                          ret
+    66                                  
+    67                                  bubbleSort:
+    68 000000DA 48FFCE                      dec rsi
+    69                                  .outerLoop:
+    70 000000DD 4889F1                      mov rcx, rsi
+    71 000000E0 4889FB                      mov rbx, rdi
+    72                                  .innerLoop:
+    73 000000E3 8A03                        mov al, [rbx]
+    74 000000E5 8A5B01                      mov bl, [rbx+1]
+    75 000000E8 38D8                        cmp al, bl
+    76 000000EA 7615                        jbe .noSwap
+    77                                  
+    78 000000EC 880425[F0000000]            mov [temp], al
+    79 000000F3 88D8                        mov al, bl
+    80 000000F5 8803                        mov [rbx], al
+    81 000000F7 8A0425[F0000000]            mov al, [temp]
+    82 000000FE 884301                      mov [rbx+1], al
+    83                                  
+    84                                  .noSwap:
+    85 00000101 48FFC3                      inc rbx
+    86 00000104 E2DD                        loop .innerLoop
+    87 00000106 48FFCE                      dec rsi
+    88 00000109 75D2                        jnz .outerLoop
+    89 0000010B C3                          ret

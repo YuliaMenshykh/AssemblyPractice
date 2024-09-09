@@ -1,0 +1,163 @@
+     1                                  section .data
+     2                                  
+     3 00000000 456E7465722061206E-         promptMessage db "Enter a number: ", 0
+     3 00000009 756D6265723A2000   
+     4                                      promptMessageLen equ $ - promptMessage
+     5                                  
+     6 00000011 466163746F7269616C-         loopMessage db "Factorial (Loop): ", 0
+     6 0000001A 20284C6F6F70293A20-
+     6 00000023 00                 
+     7                                      loopMessageLen equ $ - loopMessage
+     8                                  
+     9 00000024 466163746F7269616C-         recursionMessage db "Factorial (Recursion): ", 0
+     9 0000002D 202852656375727369-
+     9 00000036 6F6E293A2000       
+    10                                      recursionMessageLen equ $ - recursionMessage
+    11                                  
+    12                                  section .bss
+    13                                  
+    14 00000000 ????????                    inputNumber resb 4               ; buffer for input number
+    15 00000004 ????????????????            resultLoop resq 1                ; loop factorial result
+    16 0000000C ????????????????            resultRecursion resq 1           ; recursion factorial result
+    17 00000014 ????????                    inputBuffer resb 4               ; reading input
+    18 00000018 <res 14h>                   outputBuffer resb 20             ; printing results (20 digits)
+    19                                  
+    20                                  section .text
+    21                                      global _start
+    22                                  
+    23                                  _start:
+    24                                      
+    25                                  ; Input Handling
+    26                                  ; ---------------------------
+    27                                  ;write input prompt
+    28 00000000 B801000000                  mov rax, 1                       
+    29 00000005 BF01000000                  mov rdi, 1                      
+    30 0000000A 48BE-                       mov rsi, promptMessage           
+    30 0000000C [0000000000000000] 
+    31 00000014 BA11000000                  mov rdx, promptMessageLen        
+    32 00000019 0F05                        syscall
+    33                                  
+    34                                  ;read the input number
+    35 0000001B B800000000                  mov rax, 0            
+    36 00000020 BF00000000                  mov rdi, 0            
+    37 00000025 48BE-                       mov rsi, inputBuffer  
+    37 00000027 [1400000000000000] 
+    38 0000002F BA04000000                  mov rdx, 4            
+    39 00000034 0F05                        syscall
+    40                                  
+    41                                  ;from ASCII to integer
+    42 00000036 802C25[14000000]30          sub byte [inputBuffer], '0'      
+    43 0000003E 480FB61C25-                 movzx rbx, byte [inputBuffer]    ; Move input to rbx
+    43 00000043 [14000000]         
+    44                                  
+    45                                  ;check if input is valid
+    46 00000047 4883FB00                    cmp rbx, 0
+    47 0000004B 7E78                        jle _exit
+    48                                  
+    49                                  ;store the input in inputNumber
+    50 0000004D 48891C25[00000000]          mov [inputNumber], rbx
+    51                                  
+    52                                  
+    53                                  ;Loop-based Factorial 
+    54                                  ; ---------------------------
+    55 00000055 4889D8                      mov rax, rbx                     
+    56 00000058 E872000000                  call factoriaLoop              
+    57 0000005D 48890425[04000000]          mov [resultLoop], rax            
+    58                                  
+    59                                  ;print Loop-based result
+    60 00000065 B801000000                  mov rax, 1                       
+    61 0000006A BF01000000                  mov rdi, 1                       
+    62 0000006F 48BE-                       mov rsi, loopMessage             
+    62 00000071 [1100000000000000] 
+    63 00000079 BA13000000                  mov rdx, loopMessageLen          
+    64 0000007E 0F05                        syscall
+    65                                  
+    66 00000080 488B0425[04000000]          mov rax, [resultLoop]
+    67 00000088 E875000000                  call printResult
+    68                                  
+    69                                  
+    70                                  ;Recursive Factorial Calculation
+    71                                  ; ---------------------------
+    72 0000008D 4889D8                      mov rax, rbx                    
+    73 00000090 E852000000                  call factorialRecursion        
+    74 00000095 48890425[0C000000]          mov [resultRecursion], rax      
+    75                                  
+    76                                  ;display recursion result
+    77 0000009D B801000000                  mov rax, 1                       
+    78 000000A2 BF01000000                  mov rdi, 1                       
+    79 000000A7 48BE-                       mov rsi, recursionMessage        
+    79 000000A9 [2400000000000000] 
+    80 000000B1 BA18000000                  mov rdx, recursionMessageLen     
+    81 000000B6 0F05                        syscall
+    82                                  
+    83                                  ;print recursion result
+    84 000000B8 488B0425[0C000000]          mov rax, [resultRecursion]
+    85 000000C0 E83D000000                  call printResult
+    86                                  
+    87                                  ; Exit
+    88                                  _exit:
+    89 000000C5 B83C000000                  mov rax, 60      
+    90 000000CA 4831FF                      xor rdi, rdi     
+    91 000000CD 0F05                        syscall
+    92                                  
+    93                                  
+    94                                  ; Loop-based Factorial 
+    95                                  ; -----------------------------------
+    96                                  factoriaLoop:
+    97 000000CF 4889C1                      mov rcx, rax                     ; initialize counter
+    98 000000D2 B801000000                  mov rax, 1                       
+    99                                  loop:
+   100 000000D7 4883F901                    cmp rcx, 1                       
+   101 000000DB 7E09                        jle end
+   102 000000DD 480FAFC1                    imul rax, rcx                    ; rax = rax * rcx
+   103 000000E1 48FFC9                      dec rcx                          ; decrement counter
+   104 000000E4 EBF1                        jmp loop
+   105                                  end:
+   106 000000E6 C3                          ret
+   107                                  
+   108                                  
+   109                                  ; Recursive Factorial Procedure
+   110                                  ; ----------------------------------------
+   111                                  factorialRecursion:
+   112 000000E7 4883F801                    cmp rax, 1                       
+   113 000000EB 7E0F                        jle out
+   114 000000ED 50                          push rax                         ; Save current rax (n)
+   115 000000EE 48FFC8                      dec rax                          ; n = n - 1
+   116 000000F1 E8F1FFFFFF                  call factorialRecursion         ; Recursively calculate factorial(n-1)
+   117 000000F6 5B                          pop rbx                          ; Restore original rax (n)
+   118 000000F7 480FAFC3                    imul rax, rbx                    ; Multiply rax by n
+   119 000000FB C3                          ret
+   120                                  out:
+   121 000000FC B801000000                  mov rax, 1                       ; Return 1 for base case
+   122 00000101 C3                          ret
+   123                                  
+   124                                  
+   125                                  ; Print Result
+   126                                  ; ----------------------------------------
+   127                                  printResult:
+   128                                  
+   129 00000102 50                          push rax                        
+   130 00000103 41B80A000000                mov r8, 10						; base 10 divisor
+   131 00000109 4831C9                      xor rcx, rcx                     
+   132 0000010C 488D3C25[2B000000]          lea rdi, [outputBuffer + 19]	; set rdi to the end of the buffer
+   133 00000114 C6070A                      mov byte [rdi], 0xA             ; newline 
+   134                                  
+   135                                  convert:
+   136 00000117 4831D2                      xor rdx, rdx                    
+   137 0000011A 49F7F0                      div r8                          ; Divide rax by 10
+   138 0000011D 80C230                      add dl, '0'                     
+   139 00000120 48FFCF                      dec rdi                         ; Move buffer pointer backwards
+   140 00000123 8817                        mov [rdi], dl                   ; Store digit in buffer
+   141 00000125 48FFC1                      inc rcx                         
+   142 00000128 4885C0                      test rax, rax                 
+   143 0000012B 75EA                        jnz convert
+   144                                  
+   145 0000012D 58                          pop rax                          
+   146                                  
+   147                                  ; Print the result from rdi
+   148 0000012E 4889FE                      mov rsi, rdi                     ; Pointer to buffer start
+   149 00000131 BA14000000                  mov rdx, 20                      ; Max 20 characters + newline
+   150 00000136 B801000000                  mov rax, 1                       
+   151 0000013B BF01000000                  mov rdi, 1                      
+   152 00000140 0F05                        syscall
+   153 00000142 C3                          ret

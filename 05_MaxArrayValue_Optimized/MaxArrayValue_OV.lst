@@ -1,0 +1,101 @@
+     1                                  section .data
+     2                                     
+     3 00000000 020005000100040008-     	wordArray dw 2, 5, 1, 4, 8, 9, 1
+     3 00000009 0009000100         
+     4                                  	.TYPE equ 2
+     5                                  	.SIZEOF equ $-wordArray
+     6                                  
+     7 0000000E 546865206C61726765-     	msg db "The largest digit is: ", 0xA,0xD 
+     7 00000017 737420646967697420-
+     7 00000020 69733A200A0D       
+     8                                  	len equ $-msg 
+     9                                  	
+    10                                  section .bss
+    11 00000000 ????                    	largest resb 2  
+    12                                  
+    13                                  section .text
+    14                                  	global _start       
+    15                                  
+    16                                  _start:	              
+    17 00000000 B901000000                  mov rcx, 7 / 4      ;4 elements per iteration
+    18 00000005 48BE-                       mov rsi, wordArray  ;base address of the array
+    18 00000007 [0000000000000000] 
+    19 0000000F 4831C0                  	xor rax, rax        
+    20                                  	
+    21 00000012 E868000000              	call findMaxValue
+    22                                  	
+    23                                  ; Handle remaining elements (if array length is not a multiple of 4)
+    24 00000017 B903000000              	mov rcx, 7 % 4
+    25 0000001C 7405                    	jz done             
+    26 0000001E E892000000              	call findMaxRemaining
+    27                                  
+    28                                  done:
+    29                                  ;convert the largest value to a string
+    30 00000023 48890425[00000000]          mov [largest], rax    ; store the largest value
+    31 0000002B 488B0425[00000000]          mov rax, [largest]
+    32 00000033 4883C030                    add rax, '0'          ; convert the integer to ASCII (for digits 0-9)
+    33 00000037 48890425[00000000]          mov [largest], rax
+    34                                  
+    35                                  ; Print the message
+    36 0000003F B804000000                  mov rax, 4           
+    37 00000044 BB01000000                  mov rbx, 1           
+    38 00000049 48B9-                       mov rcx, msg          ; message to write
+    38 0000004B [0E00000000000000] 
+    39 00000053 BA18000000                  mov rdx, len          ; length of message
+    40 00000058 CD80                        int 0x80            
+    41                                  
+    42                                  ; Print the largest digit
+    43 0000005A B804000000                  mov rax, 4           
+    44 0000005F BB01000000                  mov rbx, 1            
+    45 00000064 48B9-                       mov rcx, largest      
+    45 00000066 [0000000000000000] 
+    46 0000006E BA01000000                  mov rdx, 1           
+    47 00000073 CD80                        int 0x80             
+    48                                  
+    49                                  ; Exit
+    50 00000075 B801000000                  mov rax, 1           
+    51 0000007A 4831DB                      xor rbx, rbx         
+    52 0000007D CD80                        int 0x80             
+    53                                  
+    54                                  
+    55                                  
+    56                                  findMaxValue:
+    57                                  ;compare four elements at once
+    58                                  compareLoop:
+    59 0000007F 480FB71E                    movzx rbx, word [rsi]     
+    60 00000083 480FB75602                  movzx rdx, word [rsi + 2] 
+    61 00000088 4C0FB74604                  movzx r8, word [rsi + 4]  
+    62 0000008D 4C0FB74E06                  movzx r9, word [rsi + 6]  
+    63                                  
+    64                                  ;compare and store the maximum value in rax
+    65 00000092 4839D8                      cmp rax, rbx
+    66 00000095 480F4CC3                    cmovl rax, rbx ;rax = rbx if rax < rbx
+    67                                  
+    68 00000099 4839D0                      cmp rax, rdx
+    69 0000009C 480F4CC2                    cmovl rax, rdx
+    70                                  
+    71 000000A0 4C39C0                      cmp rax, r8
+    72 000000A3 490F4CC0                    cmovl rax, r8
+    73                                  
+    74 000000A7 4C39C8                      cmp rax, r9
+    75 000000AA 490F4CC1                    cmovl rax, r9
+    76                                  
+    77                                  ;move to the next 4 elements
+    78 000000AE 4883C608                    add rsi, 8
+    79 000000B2 E2CB                        loop compareLoop
+    80 000000B4 C3                          ret
+    81                                  
+    82                                  
+    83                                  
+    84                                  
+    85                                  findMaxRemaining:
+    86                                  
+    87                                  ;if less than 4
+    88                                  compareRemaining:
+    89 000000B5 480FB71E                    movzx rbx, word [rsi]
+    90 000000B9 4839D8                      cmp rax, rbx
+    91 000000BC 480F4CC3                    cmovl rax, rbx
+    92                                  
+    93 000000C0 4883C602                    add rsi, 2
+    94 000000C4 E2EF                        loop compareRemaining
+    95 000000C6 C3                          ret
